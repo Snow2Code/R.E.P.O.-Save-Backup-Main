@@ -8,7 +8,7 @@ This tool is meant to keep your save files safe (no pun intended).
 
 ---
 
-![App Screenshot](./Screenshots/Снимок%20экрана%202025-05-18%20170055.png)
+![App Screenshot](./Screenshots/Screenshot 2025-05-28 204811.png)
 
 ---
 
