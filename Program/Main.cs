@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Net.Http;
+using System.Reflection;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -19,13 +21,23 @@ namespace Main
 {
     public partial class Main : Form
     {
-        private string SaveDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"..\LocalLow\semiwork\Repo\saves");
+        /*
+        Directorys.
 
+        Repo saves - C:\Users\Snowy\AppData\locallow\semiwork\Repo\saves
+        Backup saves - C:\Users\Snowy\Documents\R.E.P.O Saves (Backup)
+
+        */
+
+        private string SaveDirectory => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"..\LocalLow\semiwork\Repo\saves");
         private string BackupDirectory => Program.BackupDirectory;
+
+        // Versions
+        private const string versionUrl = "https://raw.githubusercontent.com/Snow2Code/R.E.P.O.-Save-Backup/refs/heads/main/version.txt";
+        private const string latestReleaseUrl = "https://github.com/Snow2Code/R.E.P.O.-Save-Backup/releases/latest";
 
         public Main()
         {
-            // Shit
             this.FormBorderStyle = FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             // this.MinimizeBox = false;
@@ -35,8 +47,6 @@ namespace Main
 
             dataGridViewRepoSaves.Columns.Add("SaveDate", "Date and Time");
             dataGridViewRepoSaves.Columns.Add("FolderName", "Folder Name");
-
-
             dataGridViewBackups.Columns.Add("SaveDate", "Date and Time");
             dataGridViewBackups.Columns.Add("FolderName", "Folder Name");
 
@@ -44,15 +54,72 @@ namespace Main
             dataGridViewRepoSaves.AllowUserToAddRows = false;
             dataGridViewRepoSaves.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-
             LoadSaveList();
+            ProgramLoaded();
         }
+
+        private async void ProgramLoaded()
+        {
+            Version localVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            Version remoteVersion = await GetRemoteVersion();
+
+            if (remoteVersion == null)
+            {
+                Console.WriteLine("Meow! Cannot get latest github version!");
+                //MessageBox.Show("Could not check for updates. You're on your own.", "Update Check Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (remoteVersion > localVersion)
+            {
+                Console.WriteLine("Meow! Version out of date!");
+
+                DialogResult result = MessageBox.Show(
+                    $"A new version is available.\nYou're on {localVersion}, and the latest is {remoteVersion}.\n\nIt is recommended to use the latest version. But not a requirement.",
+                    "Update Available",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Information
+                );
+
+                if (result == DialogResult.Yes)
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = latestReleaseUrl,
+                        UseShellExecute = true
+                    });
+                    
+                    // Excuse me, we don't want to forcefully close the app! What if the user is too lazy to download the latest version??
+                    //Application.Exit();
+                } else {
+                    // Continue with current version
+                }
+            } else {
+                // Everything's up to date
+            }
+        }
+
+        private async Task<Version> GetRemoteVersion()
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                try
+                {
+                    string versionString = await client.GetStringAsync(versionUrl);
+                    return new Version(versionString.Trim());
+                } catch {
+                    return null;
+                }
+            }
+        }
+        
         private void LoadSaveList()
         {
             dataGridViewRepoSaves.Rows.Clear();
             dataGridViewBackups.Rows.Clear();
 
-            Logger.Write("Loading saves (not backups, current saves)");
+            // This shouldn't save just repo saves because I added the backup saves grid thing.
+            Logger.Write("Loading saves");
 
             if (!Directory.Exists(SaveDirectory))
                 return;

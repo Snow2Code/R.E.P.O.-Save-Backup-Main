@@ -39,15 +39,15 @@ namespace Main
             Application.Run(new Main());
         }
 
-
         static void EnsureBackupDirectory()
         {
             try
             {
                 if (!Directory.Exists(BackupDirectory))
                 {
+                    Logger.Write("Creating backup directory.");
+                    
                     Directory.CreateDirectory(BackupDirectory);
-                    Logger.Write("Created backup directory.");
                 }
             }
             catch (Exception ex)
